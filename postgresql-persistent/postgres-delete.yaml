@@ -1,0 +1,57 @@
+- hosts: localhost
+  gather_facts: False
+  tasks:   
+    - name: Delete a deployment
+      tags:
+        - deleteDeployment
+      k8s:
+        state: absent
+        kubeconfig: "{{ lookup('env', 'KUBECONFIG') }}"
+        definition:
+          apiVersion: apps/v1
+          kind: Deployment
+          metadata:
+            name: postgresql
+            namespace: postgresql-persistent
+          spec:
+            selector:
+              matchLabels:
+                app: postgresql
+            replicas: 2
+            template:
+              metadata:
+                labels:
+                  app: postgresql
+              spec:
+                containers:
+                  - name: postgresql
+                    image: registry.access.redhat.com/rhscl/postgresql-96-rhel7
+                    ports:
+                      - containerPort: 8080
+
+    - name: Delete a namespace
+      tags:
+        - deleteNamespace
+      k8s:
+        state: absent
+        kubeconfig: "{{ lookup('env', 'KUBECONFIG') }}"
+        definition:
+          apiVersion: v1
+          kind: namespace
+          metadata:
+            name: postgresql-persistent
+            labels:
+              app: postgresql
+
+    - name: Remove a service
+      tags:
+        - deleteService
+      k8s:
+        state: absent
+        api_version: v1
+        kubeconfig: "{{ lookup('env', 'KUBECONFIG') }}"
+        kind: Service
+        namespace: postgresql-persistent
+        name: postgresql
+
+
